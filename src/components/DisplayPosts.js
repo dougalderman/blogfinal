@@ -24,6 +24,7 @@ class DisplayPosts extends Component {
   
   render() {
     const { posts }  = this.state;
+
     return posts.map(( post ) => {
 
       return (
@@ -51,7 +52,7 @@ class DisplayPosts extends Component {
           </span>
 
         </div>
-      )
+      );
 
     });
   }
