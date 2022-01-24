@@ -1,8 +1,8 @@
 # This "input" configures a global authorization rule to enable public access to
 # all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
-# input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
 
-type Post @model  @auth(rules: [{ allow: private, provider: iam }]) {
+type Post @model {
 	id: ID!
 	postOwnerId: String!
 	postOwnerUsername: String!
@@ -13,7 +13,7 @@ type Post @model  @auth(rules: [{ allow: private, provider: iam }]) {
 	likes: [Like] @hasMany
 }
  
-type Comment @model  @auth(rules: [{ allow: private, provider: iam }]) {
+type Comment @model {
 	id: ID!
 	commentOwnerId: String!
 	commentOwnerUsername: String!
@@ -21,7 +21,7 @@ type Comment @model  @auth(rules: [{ allow: private, provider: iam }]) {
 	createdAt: String!
 }
  
-type Like @model  @auth(rules: [{ allow: private, provider: iam }]) {
+type Like @model {
 	id: ID!
 	numberLikes: Int!
 	likeOwnerId: String!
