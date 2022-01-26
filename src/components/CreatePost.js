@@ -4,12 +4,15 @@ import { createPost } from '../graphql/mutations';
 
 class CreatePost extends Component {
 
-  state = {
-    postOwnerId: "",
-    postOwnerUsername: "",
-    postTitle: "",
-    postBody: ""
-  }
+  constructor(props) {
+    super(props);
+    this.state = {
+      postOwnerId: "",
+      postOwnerUsername: "",
+      postTitle: "",
+      postBody: ""
+    }
+  }  
 
   componentDidMount = async () => {
     await Auth.currentUserInfo()

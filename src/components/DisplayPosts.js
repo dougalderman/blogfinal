@@ -6,11 +6,14 @@ import EditPost from './EditPost';
 import { onCreatePost, onDeletePost, onUpdatePost } from '../graphql/subscriptions';
 
 class DisplayPosts extends Component {
-
-  state = {
-    posts: []
-  }
   
+  constructor(props) {
+    super(props);
+    this.state = {
+      posts: []
+    }
+  }
+
   componentDidMount = async () => {
     this.getPosts();
 
@@ -42,14 +45,15 @@ class DisplayPosts extends Component {
 
             const { posts } = this.state;
             const updatePost = postData.value.data.onUpdatePost;
-            const index = posts.findIndex(post => post.id === updatePost);
-            const updatedPosts = [
-              ...posts.slice(0, index),
-              updatePost,
-              ...posts.slice(index + 1)
-            ];
-            this.setState({posts: updatedPosts});
-
+            const index = posts.findIndex(post => post.id === updatePost.id);
+            if (index !== -1) {
+              const updatedPosts = [
+                ...posts.slice(0, index),
+                updatePost,
+                ...posts.slice(index + 1)
+              ];
+              this.setState({posts: updatedPosts});
+            }   
           }  
         });
 

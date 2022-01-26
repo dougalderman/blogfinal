@@ -4,25 +4,40 @@ import { updatePost } from '../graphql/mutations';
 
 class EditPost extends Component {
 
-  state = {
-    show: false,
-    id: '',
-    postOwnerId: '',
-    postOwnerUsername: '',
-    postTitle: '',
-    postBody: '',
-    postData: {
-      postTitle: this.props.postTitle,
-      postBody: this.props.postBody
-    }
-  }
+  postDataBeforeUpdate = {}
 
-  handleModal = () => {
-    this.setState({ show: !this.state.show});
+  constructor(props) {
+    super(props);
+    this.state = {
+      show: false,
+      id: '',
+      postOwnerId: '',
+      postOwnerUsername: '',
+      postTitle: '',
+      postBody: '',
+      postData: {
+        postTitle: this.props.postTitle,
+        postBody: this.props.postBody
+      }
+    }
+  }  
+
+  openModal = () => {
+    this.setState({ show: true});
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
+    this.postDataBeforeUpdate = JSON.parse(JSON.stringify(this.state.postData));
+  } 
+  
+  closeModalWithoutSaving = () => {
+    this.setState({ show: false});
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    this.setState({
+      postData: this.postDataBeforeUpdate
+    });
   }
-
+ 
   handleUpdatePost = async (event) => {
     event.preventDefault();
     
@@ -52,7 +67,7 @@ class EditPost extends Component {
     });
   }
 
-  componentWillMount = async () => {
+  componentDidMount = async () => {
     await Auth.currentUserInfo()
       .then(user => {
         this.setState({
@@ -68,7 +83,7 @@ class EditPost extends Component {
         { this.state.show && (
           <div className="modal">
             <button className = "close"
-            onClick={this.handleModal}>
+              onClick={() => this.closeModalWithoutSaving()}>
               X
             </button>
 
@@ -96,7 +111,7 @@ class EditPost extends Component {
           </div>
         )}
 
-        <button onClick={this.handleModal}>Edit</button>
+        <button onClick={() => this.openModal()}>Edit</button>
       </>
     )
   }
