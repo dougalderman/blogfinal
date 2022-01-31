@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
-import { listPosts } from '../graphql/queries';
+import { listPosts, listComments } from '../graphql/queries';
 import { API, graphqlOperation } from 'aws-amplify';
 import DeletePost  from './DeletePosts';
 import EditPost from './EditPost';
-import { onCreatePost, onDeletePost, onUpdatePost } from '../graphql/subscriptions';
+import CreateCommentPost from './CreateCommentPost';
+import CommentPost from './CommentPost';
+import { onCreatePost, onDeletePost, onUpdatePost, onCreateComment } from '../graphql/subscriptions';
 
 class DisplayPosts extends Component {
   
@@ -40,45 +42,87 @@ class DisplayPosts extends Component {
         });
 
         this.updatePostListener = API.graphql(graphqlOperation(onUpdatePost))
-        .subscribe({
-          next: postData => {
+          .subscribe({
+            next: postData => {
 
-            const { posts } = this.state;
-            const updatePost = postData.value.data.onUpdatePost;
-            const index = posts.findIndex(post => post.id === updatePost.id);
-            if (index !== -1) {
-              const updatedPosts = [
-                ...posts.slice(0, index),
-                updatePost,
-                ...posts.slice(index + 1)
-              ];
-              this.setState({posts: updatedPosts});
-            }   
-          }  
-        });
+              const { posts } = this.state;
+              const updatePost = postData.value.data.onUpdatePost;
+              const index = posts.findIndex(post => post.id === updatePost.id);
+              if (index !== -1) {
+                const updatedPosts = [
+                  ...posts.slice(0, index),
+                  updatePost,
+                  ...posts.slice(index + 1)
+                ];
+                this.setState({posts: updatedPosts});
+              }   
+            }  
+          });
 
+        this.createPostCommentListener = API.graphql(graphqlOperation(onCreateComment))
+          .subscribe({
+            next: commentData => {
+              const createdComment = commentData.value.data.onCreateComment;
+              let posts = [...this.state.posts];
 
+              for (let post of posts) {
+                if (createdComment.post.id === post.id) {
+                  post.comments.items.push(createdComment);
+                }
+              }
 
+              this.setState({posts});
+            }
+          })
   }
 
   componentWillUnmount() {
     this.createPostListener.unsubscribe();
     this.deletePostListener.unsubscribe();
     this.updatePostListener.unsubscribe();
+    this.createPostCommentListener.unsubscribe();
   }
 
   getPosts = async () => {
-    const result = await API.graphql(graphqlOperation(listPosts));
+    const resultListPosts = await API.graphql(graphqlOperation(listPosts));
     
-    this.setState({ posts: result.data.listPosts.items})
-    
-    // console.log('All Posts: ', result.data.listPosts.items);
+    this.setState({ posts: resultListPosts.data.listPosts.items})
+
+    const { posts }  = this.state;
+
+    posts.forEach((post, ind) => {
+      this.getComments(post, ind);
+    });
   }
+
+  getComments = async (post, index) => {
+    console.log('post: ', post);
+    console.log('index: ', index);
+
+    const id = post.id;
+    console.log('id: ', id);
+    const input = {
+      postCommentsId: id
+    };
+    const resultListComments = await API.graphql(graphqlOperation(listComments, {input}));
+    
+    console.log('resultsListComments: ', resultListComments);
+    /* if (resultListComments.data && resultListComments.data.listComments && resultListComments.data.listComments.items && resultListComments.data.listComments.items.length > 0) {
+      this.setState(state => { 
+        state.posts[index].comments.push(resultListComments.data.listComments.items);
+      }); 
+    } */
+  }    
   
   render() {
     const { posts }  = this.state;
+    let hasComments = false;
 
     return posts.map(( post ) => {
+
+      if (post.comments && post.comments.items && post.comments.items.length > 0) {
+        hasComments = true;
+      }
 
       return (
         <div className="posts" style={rowStyle} key={ post.id }>
@@ -104,9 +148,16 @@ class DisplayPosts extends Component {
             <EditPost {...post} />
           </span>
 
+          <span>
+            <CreateCommentPost postId={post.id}/>
+            {hasComments && <span style={{fontSize: "19px", color:"gray"}}>
+              Comments: </span>}
+
+                {hasComments && post.comments.items.forEach((comment, index) =>
+                  <CommentPost key={index} commentData={comment}/>)}
+          </span>    
         </div>
       );
-
     });
   }
 }
