@@ -12,12 +12,15 @@ class DisplayPosts extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      posts: []
+      posts: [],
+      comments: []
     }
   }
 
   componentDidMount = async () => {
+
     this.getPosts();
+    this.getComments();
 
     this.createPostListener = API.graphql(graphqlOperation(onCreatePost))
       .subscribe({
@@ -63,15 +66,16 @@ class DisplayPosts extends Component {
           .subscribe({
             next: commentData => {
               const createdComment = commentData.value.data.onCreateComment;
-              let posts = [...this.state.posts];
+              const posts = [...this.state.posts];
+              let comments = [...this.state.comments];
 
               for (let post of posts) {
-                if (createdComment.post.id === post.id) {
-                  post.comments.items.push(createdComment);
+                if (createdComment.postCommentsId === post.id) {
+                  comments.push(createdComment);
                 }
               }
 
-              this.setState({posts});
+              this.setState({comments});
             }
           })
   }
@@ -87,41 +91,27 @@ class DisplayPosts extends Component {
     const resultListPosts = await API.graphql(graphqlOperation(listPosts));
     
     this.setState({ posts: resultListPosts.data.listPosts.items})
-
-    const { posts }  = this.state;
-
-    posts.forEach((post, ind) => {
-      this.getComments(post, ind);
-    });
   }
 
   getComments = async (post, index) => {
-    console.log('post: ', post);
-    console.log('index: ', index);
+    const resultListComments = await API.graphql(graphqlOperation(listComments));
 
-    const id = post.id;
-    console.log('id: ', id);
-    const input = {
-      postCommentsId: id
-    };
-    const resultListComments = await API.graphql(graphqlOperation(listComments, {input}));
-    
-    console.log('resultsListComments: ', resultListComments);
-    /* if (resultListComments.data && resultListComments.data.listComments && resultListComments.data.listComments.items && resultListComments.data.listComments.items.length > 0) {
-      this.setState(state => { 
-        state.posts[index].comments.push(resultListComments.data.listComments.items);
-      }); 
-    } */
-  }    
+    this.setState({ comments: resultListComments.data.listComments.items })
+  }
   
   render() {
-    const { posts }  = this.state;
-    let hasComments = false;
-
+    const { posts, comments }  = this.state;
+    
     return posts.map(( post ) => {
 
-      if (post.comments && post.comments.items && post.comments.items.length > 0) {
-        hasComments = true;
+      let commentsForThisPost = [];
+
+      if (comments.length && comments.length > 0) {
+        for (const comment of comments) {
+          if (comment.postCommentsId === post.id) {
+            commentsForThisPost.push(comment);
+          } 
+        }
       }
 
       return (
@@ -150,12 +140,12 @@ class DisplayPosts extends Component {
 
           <span>
             <CreateCommentPost postId={post.id}/>
-            {hasComments && <span style={{fontSize: "19px", color:"gray"}}>
+            {commentsForThisPost.length > 0 && <span style={{fontSize: "19px", color:"gray"}}>
               Comments: </span>}
 
-                {hasComments && post.comments.items.forEach((comment, index) =>
-                  <CommentPost key={index} commentData={comment}/>)}
-          </span>    
+                {commentsForThisPost.length > 0 && commentsForThisPost.map((comment) =>
+                  <CommentPost key={comment.id} commentData={comment}/>)}
+          </span> 
         </div>
       );
     });
